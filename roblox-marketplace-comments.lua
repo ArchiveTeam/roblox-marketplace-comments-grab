@@ -370,7 +370,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     if string.match(url, "^https?://catalog%.roblox%.com/v2/recommendations/assets%?") then
       json = cjson.decode(html)
       for _, new_id in pairs(json["data"]) do
-        discover_item(discovered_items, "item:" .. tostring(new_id))
+        discover_item(discovered_items, "asset:" .. tostring(new_id))
       end
     end
     if string.match(url, "^https?://www%.roblox%.com/comments/get%-json%?") then
