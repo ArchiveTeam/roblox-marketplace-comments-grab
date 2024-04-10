@@ -84,6 +84,7 @@ find_item = function(url)
     ["^https?://catalog%.roblox%.com/v1/catalog/items/([0-9]+)/details%?itemType=Asset$"]="asset",
     ["^https?://users%.roblox%.com/v1/users/([0-9]+)$"]="user",
     ["^https?://groups%.roblox%.com/v1/groups/([0-9]+)$"]="group",
+    ["^https?://www%.roblox%.com/comments/get%-json%?assetId=([0-9]+)&startindex=0&extra=badge$"]="badge"
   }) do
     value = string.match(url, pattern)
     type_ = name
@@ -122,7 +123,7 @@ allowed = function(url, parenturl)
   if ids[url] then
     return true
   end
-  
+
   if string.match(url, "^https?://[^/]+/login%?")
     or string.match(url, "^https?://[^/]+/[nN]ew[lL]ogin%?")
     or string.match(url, "^https?://avatar%.roblox%.com/v1/avatar/assets/[0-9]+/wear$")
@@ -193,7 +194,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
   local urls = {}
   local html = nil
   local json = nil
-  
+
   downloaded[url] = true
 
   if abortgrab then
@@ -344,7 +345,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     end
     return result
   end
-  
+
   local function check_cursor(newurl, json, cursor_key)
     local cursor = json[cursor_key]
     if cursor ~= cjson.null then
@@ -355,7 +356,13 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
   if allowed(url)
     and status_code < 300 then
     html = read_file(file)
-    
+
+    -- badge
+    if string.match(url, "/comments/get%-json%?assetId=[0-9]+&startindex=0&extra=badge$") then
+      check("https://www.roblox.com/comments/get-json?assetId=" .. item_value .. "&startindex=0")
+      return urls
+    end
+
     -- asset
     if string.match(url, "^https?://catalog%.roblox%.com/v1/catalog/items/[0-9]+/details%?itemType=Asset$") then
       json = cjson.decode(html)
@@ -373,6 +380,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
         discover_item(discovered_items, "asset:" .. tostring(new_id))
       end
     end
+    -- (and badge)
     if string.match(url, "^https?://www%.roblox%.com/comments/get%-json%?") then
       json = cjson.decode(html)
       local max_comments = json["MaxRows"]
@@ -385,8 +393,8 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
         check(increment_param(url, "startindex", 0, max_comments))
       end
     end
-    
-    
+
+
     --user
     if string.match(url, "^https?://users%.roblox%.com/v1/users/[0-9]+$") then
       check("https://www.roblox.com/users/" .. item_value)
@@ -456,8 +464,8 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
         discover_item(discovered_items, "asset:" .. tostring(new_id))
       end
     end
-    
-    
+
+
     --group
     if string.match(url, "^https?://groups%.roblox%.com/v1/groups/[0-9]+$") then
       check("https://www.roblox.com/groups/" .. item_value)
@@ -497,8 +505,8 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
         check(increment_param(url, "startRowIndex", "0", json["nextRowIndex"]))
       end
     end
-    
-    
+
+
     if string.match(html, "^%s*{") then
       if not json then
         json = cjson.decode(html)
@@ -563,7 +571,7 @@ end
 
 wget.callbacks.httploop_result = function(url, err, http_stat)
   status_code = http_stat["statcode"]
-  
+
   if not logged_response then
     url_count = url_count + 1
     io.stdout:write(url_count .. "=" .. status_code .. " " .. url["url"] .. " \n")
