@@ -562,6 +562,13 @@ wget.callbacks.write_to_warc = function(url, http_stat)
     retry_url = true
     return false
   end
+  if string.match(url["url"], "/users/favorites/list%-json%?") then
+    local json = cjson.decode(read_file(http_stat["local_file"]))
+    if json["Data"]["Items"] == nil or json["Data"]["Items"] == cjson.null then
+      retry_url = true
+      return false
+    end
+  end
   if abortgrab then
     print("Not writing to WARC.")
     return false
