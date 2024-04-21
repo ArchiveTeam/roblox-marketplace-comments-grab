@@ -449,7 +449,9 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       json = cjson.decode(html)
       for _, data in pairs(json["data"]) do
         discover_item(discovered_items, "group:" .. tostring(data["group"]["id"]))
-        discover_item(discovered_items, "user:" .. tostring(data["group"]["owner"]["userId"]))
+        if data["group"]["owner"] ~= cjson.null then
+          discover_item(discovered_items, "user:" .. tostring(data["group"]["owner"]["userId"]))
+        end
       end
     end
     if string.match(url, "/v2/users/[0-9]+/games$") then
